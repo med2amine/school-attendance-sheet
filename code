@@ -1,0 +1,323 @@
+import json
+import os
+from datetime import datetime, timedelta
+
+# --------------------- Utility Functions ---------------------
+
+# Loads data from the class_sheet.json file
+def load_data():
+    if os.path.exists('class_sheet.json'):
+        with open('class_sheet.json', 'r') as f:
+            return json.load(f)
+    else:
+        return {"students": [], "teachers": []}
+
+# Saves data back into the class_sheet.json file
+def save_data(data):
+    with open('class_sheet.json', 'w') as f:
+        json.dump(data, f, indent=4)
+
+# --------------------- Student Management ---------------------
+
+# Adds a new student to the system
+def add_student():
+    data = load_data()
+    id = input('Enter the student ID: ')
+    
+    # Check for duplicate ID
+    for student in data['students']:
+        if student['id'] == id:
+            print('The student ID is already taken')
+            return  # Early exit if ID is duplicate
+
+    # Collect student info
+    name = input('Enter the student name: ')
+    group = input('Enter student group: ')
+    Class = input('Enter student class: ')
+
+    # Structure for new student
+    new_student = {
+        'id': id,
+        'name': name,
+        'group': group,
+        'class': Class,
+        'grades': {},
+        'attendance': []
+    }
+
+    # Add to data and save
+    data['students'].append(new_student)
+    save_data(data)
+    print('Student has been added')
+
+# Updates existing student information
+def update_student(id):
+    data = load_data()
+    for student in data['students']:
+        if student['id'] == id:
+            # Update values
+            new_name = input('Give the new name: ')
+            new_group = input('Give the new group: ')
+            new_Class = input('Give the new class: ')
+            student['name'] = new_name
+            student['group'] = new_group
+            student['class'] = new_Class
+            save_data(data)
+            print(f'Student {id} info has been updated')
+            return  # Stop after update
+    print('Student has not been found')
+
+# Adds or updates a student's grade in a specific subject
+def add_grade(id, subject, grade):
+    data = load_data()
+    found = False
+    for student in data['students']:
+        if student['id'] == id:
+            grade = float(grade)
+            student['grades'][subject] = grade
+            save_data(data)
+            print(f"Student {id}'s grade has been added.")
+            found = True
+            break
+    if not found:
+        print("Student not found.")
+
+# Retrieves and displays a specific student's information
+def get_student(id):
+    data = load_data()
+    found = False
+    for student in data['students']:
+        if student['id'] == id:
+            print(f'id: {id}')
+            print(f'name: {student["name"]}')
+            print(f'group: {student["group"]}')
+            print(f'class: {student["class"]}')
+            print(f'grades: {student["grades"]}')
+            print(f'attendance: {student["attendance"]}')
+            found = True
+            break
+    if not found:
+        print("Student not found.")
+
+# Lists all students in a specific class
+def list_students_by_class(Class_name):
+    data = load_data()
+    for student in data["students"]:
+        if student["class"] == Class_name:
+            print(f'id: {student["id"]}')
+            print(f'name: {student["name"]}')
+            print(f'group: {student["group"]}')
+            print(f'grades: {student["grades"]}')
+            print(f'attendance: {student["attendance"]}')
+
+# Lists all students in a specific group
+def list_students_by_group(group_name):
+    data = load_data()
+    for student in data["students"]:
+        if student["group"] == group_name:
+            print(f'id: {student["id"]}')
+            print(f'name: {student["name"]}')
+            print(f'class: {student["class"]}')
+            print(f'grades: {student["grades"]}')
+            print(f'attendance: {student["attendance"]}')
+
+# --------------------- Teacher Management ---------------------
+
+# Adds a new teacher to the system
+def add_teacher():
+    data = load_data()
+    id = input('Enter the teacher ID: ')
+    for teacher in data['teachers']:
+        if teacher['id'] == id:
+            print('The teacher ID already exists')
+            return
+    name = input('Enter the teacher name: ')
+    subject = input('Enter the teacher subject: ')
+    classes_input = input("Enter the classes the teacher teaches (comma-separated): ")
+    class_list = [cls.strip() for cls in classes_input.split(",")]
+    new_teacher = {
+        'id': id,
+        'name': name,
+        'subject': [subject],
+        'classes': class_list
+    }
+    data['teachers'].append(new_teacher)
+    save_data(data)
+    print('Teacher has been added')
+
+# Updates teacher information
+def update_teacher(id):
+    data = load_data()
+    for teacher in data['teachers']:
+        if teacher['id'] == id:
+            new_name = input('Give the new name: ')
+            new_subject = input('Give the new subject: ')
+            new_classes_input = input("Enter the classes the teacher teaches (comma-separated): ")
+            class_list = [cls.strip() for cls in new_classes_input.split(",")]
+            teacher['name'] = new_name
+            teacher['subject'] = [new_subject]
+            teacher['classes'] = class_list
+            save_data(data)
+            print('Teacher has been updated')
+            return
+    print('Teacher has not been found')
+
+# Lists teachers who teach a specific subject
+def list_teachers_by_subject(subject):
+    data = load_data()
+    for teacher in data['teachers']:
+        if subject in teacher['subject']:
+            print(f'id: {teacher["id"]}')
+            print(f'name: {teacher["name"]}')
+            print(f'classes: {teacher["classes"]}')
+
+# --------------------- Attendance Management ---------------------
+
+# Marks a student as present on a given date
+def mark_attendance(id, date):
+    data = load_data()
+    for student in data['students']:
+        if student['id'] == id:
+            student['attendance'].append(str(date))
+            save_data(data)
+            print('The attendance has been marked')
+            return
+    print('No student with this ID has been found')
+
+# Lists all students who were present on a specific date
+def list_student_by_date(date):
+    data = load_data()
+    for student in data['students']:
+        if str(date) in student['attendance']:
+            print(f'id: {student["id"]}')
+            print(f'name: {student["name"]}')
+            print(f'class: {student["class"]}')
+            print()
+
+# Lists all students who were absent on a specific date
+def list_absent_students(date):
+    data = load_data()
+    for student in data['students']:
+        if str(date) not in student['attendance']:
+            print(f'id: {student["id"]}')
+            print(f'name: {student["name"]}')
+            print(f'class: {student["class"]}')
+
+# --------------------- Academic Analytics ---------------------
+
+# Calculates and prints the average grade in a subject for a specific class
+def get_class_average(class_name, subject):
+    data = load_data()
+    total = 0
+    count = 0
+    for student in data['students']:
+        if student['class'] == class_name and subject in student['grades']:
+            total += float(student['grades'][subject])
+            count += 1
+    if count > 0:
+        avg = total / count
+        print(f'The average of class {class_name} in {subject} is {avg}')
+    else:
+        print(f'No grades found for subject {subject} in class {class_name}')
+
+# Calculates and prints the average grade for a specific student
+def get_student_average(student_id):
+    data = load_data()
+    total = 0
+    count = 0
+    for student in data['students']:
+        if student['id'] == student_id:
+            for grade in student['grades'].values():
+                total += float(grade)
+                count += 1
+            break
+    if count > 0:
+        avg = total / count
+        print(f'The student with ID {student_id} has an average of {avg}')
+    else:
+        print(f'No grades found for student {student_id}')
+
+# Generates attendance report over a date range
+def generate_attendance_report():
+    data = load_data()
+    start = input('Give the start date (YYYY-MM-DD): ')
+    end = input('Give the end date (YYYY-MM-DD): ')
+    start_date = datetime.strptime(start, '%Y-%m-%d').date()
+    end_date = datetime.strptime(end, '%Y-%m-%d').date()
+    
+    for student in data['students']:
+        print(f'Attendance for student {student["id"]}:')
+        current = start_date
+        while current <= end_date:
+            status = 'present' if str(current) in student['attendance'] else 'absent'
+            print(f'  {current}: {status}')
+            current += timedelta(days=1)
+
+# --------------------- Main Menu Interface ---------------------
+
+if __name__== '__main__' :
+    print('welcome to edutruck')
+    ed = True
+    while ed :
+        print('to add a student press 1 , to update a student press 2 ')
+        print('to add a grade press 3 , to get a student press 4 ')
+        print('to list students by class press 5 , to list students by group press 6')
+        print('to add a teacher press 7 , to update a teacher press 8')
+        print('to list teachers by subject press 9 , to mark attendence press 10')
+        print('to list students by date press 11 , to list absent students press 12')
+        print('to get class average press 13 , to get student average press 14')
+        print('to genarate attendance report press 15 , to exit program press 16')
+        n = int(input('enter your choice : '))
+        if n == 1 :
+            add_student()
+        if n == 2 :
+            id = input('enter the id of the student : ')
+            update_student(id)
+        if n == 3 :
+            id = input('enter the students id : ')
+            subject = input('enter the subject : ')
+            grade = input('enter the grade : ')
+            add_grade(id,subject,grade)
+        if n == 4 :
+            id = input('give the students id : ')
+            get_student(id)
+        if n == 5 :
+            class_name = input('enter the class name : ')
+            list_students_by_class(class_name)
+        if n == 6 :
+            group = input('enter the group : ')
+            list_students_by_group(group)
+        if n == 7 :
+            add_teacher()
+        if n == 8 :
+            teid = input('enter the teachers id : ')
+            update_teacher(teid)
+        if n == 9 :
+            subject = input('enter the subject : ')
+            list_teachers_by_subject(subject)
+        if n == 10 :
+            id = input('enter the students id : ')
+            date = input('enter the date (YYYY-MM-DD) : ')
+            attendance_date = datetime.strptime(date,'%Y-%m-%d').date()
+            mark_attendance(id,attendance_date)
+        if n == 11 :
+            date = input('enter the date (YYYY-MM-DD) : ')
+            attendance_date = datetime.strptime(date, '%Y-%m-%d').date()
+            list_student_by_date(attendance_date)
+        if n == 12 :
+            date = input('enter the date (YYYY-MM-DD) : ')
+            attendance_date = datetime.strptime(date, '%Y-%m-%d').date()
+            list_absent_students(attendance_date)
+        if n == 13 :
+            class_name = input('enter the class name : ')
+            subject = input('enter the subject : ')
+            get_class_average(class_name,subject)
+        if n == 14 :
+            id = input('enter the students id : ')
+            get_student_average(id)
+        if n == 15 :
+            generate_attendance_report()
+        if n == 16 :
+            print('thank you for using edutruck')
+            ed = False
+            break
